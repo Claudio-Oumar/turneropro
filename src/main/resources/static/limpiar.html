@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpiar Sesión - TurneroPro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        .status {
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+            font-size: 1.1rem;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            margin: 0.5rem;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        #detalles {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        .emoji {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emoji">🧹</div>
+        <h1>Limpieza de Sesión</h1>
+        <div id="resultado" class="status info">
+            Preparando limpieza...
+        </div>
+        <div id="detalles"></div>
+        <div>
+            <a href="/login.html" class="btn">Ir al Login</a>
+            <button onclick="location.reload()" class="btn btn-secondary">Limpiar de Nuevo</button>
+        </div>
+    </div>
+
+    <script>
+        // Ejecutar limpieza automáticamente al cargar
+        window.onload = function() {
+            limpiarTodo();
+        };
+
+        function limpiarTodo() {
+            const detalles = document.getElementById('detalles');
+            const resultado = document.getElementById('resultado');
+            let mensajes = [];
+
+            // 1. Verificar qué hay en localStorage antes de limpiar
+            const tokenAntes = localStorage.getItem('token');
+            const usuarioAntes = localStorage.getItem('usuario');
+            
+            if (tokenAntes) {
+                mensajes.push('✅ Token encontrado (será eliminado)');
+            } else {
+                mensajes.push('ℹ️ No hay token almacenado');
+            }
+
+            if (usuarioAntes) {
+                try {
+                    const user = JSON.parse(usuarioAntes);
+                    mensajes.push(`✅ Usuario encontrado: ${user.username} (${user.rol})`);
+                } catch (e) {
+                    mensajes.push('⚠️ Datos de usuario corruptos');
+                }
+            } else {
+                mensajes.push('ℹ️ No hay usuario almacenado');
+            }
+
+            // 2. Limpiar localStorage
+            localStorage.clear();
+            mensajes.push('🗑️ LocalStorage limpiado');
+
+            // 3. Limpiar sessionStorage
+            sessionStorage.clear();
+            mensajes.push('🗑️ SessionStorage limpiado');
+
+            // 4. Verificar que se limpió correctamente
+            const tokenDespues = localStorage.getItem('token');
+            const usuarioDespues = localStorage.getItem('usuario');
+            
+            if (!tokenDespues && !usuarioDespues) {
+                mensajes.push('✅ Verificación exitosa: Todo limpio');
+                resultado.className = 'status success';
+                resultado.innerHTML = '<strong>✅ Limpieza completada exitosamente!</strong><br>Ya puedes iniciar sesión nuevamente.';
+            } else {
+                mensajes.push('❌ Error: Algunos datos no se eliminaron');
+                resultado.className = 'status error';
+                resultado.innerHTML = '<strong>⚠️ Hubo un problema con la limpieza</strong><br>Intenta limpiar manualmente.';
+            }
+
+            // Mostrar detalles
+            detalles.innerHTML = '<strong>Detalles de la limpieza:</strong><br>' + mensajes.join('<br>');
+
+            // Log en consola
+            console.log('=== LIMPIEZA COMPLETADA ===');
+            console.log('Token después:', localStorage.getItem('token'));
+            console.log('Usuario después:', localStorage.getItem('usuario'));
+        }
+    </script>
+</body>
+</html>

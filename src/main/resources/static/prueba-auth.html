@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Autenticación - TurneroPro</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            padding: 2rem;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #252526;
+            padding: 2rem;
+            border-radius: 8px;
+        }
+        h1 {
+            color: #4ec9b0;
+            border-bottom: 2px solid #4ec9b0;
+            padding-bottom: 0.5rem;
+        }
+        .section {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: #1e1e1e;
+            border-left: 4px solid #007acc;
+            border-radius: 4px;
+        }
+        .section h2 {
+            color: #ce9178;
+            margin-top: 0;
+        }
+        .status {
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+        }
+        .success { background: #3733; color: #4ec9b0; }
+        .error { background: #f443; color: #f48771; }
+        .info { background: #0073; color: #569cd6; }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+            font-size: 1rem;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+        pre {
+            background: #1e1e1e;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            border: 1px solid #3c3c3c;
+        }
+        .json {
+            color: #ce9178;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Herramienta de Diagnóstico de Autenticación</h1>
+        
+        <div class="section">
+            <h2>📊 Estado Actual del LocalStorage</h2>
+            <div id="statusLocal"></div>
+            <button onclick="verificarStorage()">🔄 Actualizar</button>
+            <button onclick="limpiarStorage()">🗑️ Limpiar Todo</button>
+        </div>
+        
+        <div class="section">
+            <h2>🔐 Prueba de Login</h2>
+            <form id="formTest" onsubmit="event.preventDefault(); testLogin();">
+                <div style="margin: 1rem 0;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Usuario:</label>
+                    <input type="text" id="testUser" value="cliente1" 
+                           style="width: 100%; padding: 0.5rem; background: #3c3c3c; border: 1px solid #007acc; color: white; border-radius: 4px;">
+                </div>
+                <div style="margin: 1rem 0;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Contraseña:</label>
+                    <input type="password" id="testPass" value="password123"
+                           style="width: 100%; padding: 0.5rem; background: #3c3c3c; border: 1px solid #007acc; color: white; border-radius: 4px;">
+                </div>
+                <button type="submit">🚀 Probar Login</button>
+            </form>
+            <div id="loginResult" style="margin-top: 1rem;"></div>
+        </div>
+        
+        <div class="section">
+            <h2>📡 Prueba de Endpoint de Reservas</h2>
+            <button onclick="testReservasEndpoint()">🧪 Probar /api/reservas/mis-reservas</button>
+            <div id="reservasResult" style="margin-top: 1rem;"></div>
+        </div>
+        
+        <div class="section">
+            <h2>🔗 Enlaces Rápidos</h2>
+            <button onclick="window.location.href='/limpiar.html'">🧹 Ir a Limpiar</button>
+            <button onclick="window.location.href='/login.html'">🔑 Ir a Login</button>
+            <button onclick="window.location.href='/cliente-panel.html'">👤 Ir a Panel Cliente</button>
+            <button onclick="window.location.href='/barbero-panel.html'">✂️ Ir a Panel Barbero</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8081/api';
+
+        function verificarStorage() {
+            const token = localStorage.getItem('token');
+            const usuarioStr = localStorage.getItem('usuario');
+            
+            let html = '<div class="status info"><strong>📦 Contenido del LocalStorage:</strong></div>';
+            
+            if (token) {
+                html += `<div class="status success">✅ Token presente (${token.length} caracteres)</div>`;
+                html += `<pre class="json">Token: ${token.substring(0, 50)}...</pre>`;
+            } else {
+                html += '<div class="status error">❌ No hay token almacenado</div>';
+            }
+            
+            if (usuarioStr) {
+                try {
+                    const usuario = JSON.parse(usuarioStr);
+                    html += '<div class="status success">✅ Usuario presente</div>';
+                    html += '<pre class="json">' + JSON.stringify(usuario, null, 2) + '</pre>';
+                } catch (e) {
+                    html += '<div class="status error">❌ Usuario corrupto: ' + e.message + '</div>';
+                }
+            } else {
+                html += '<div class="status error">❌ No hay usuario almacenado</div>';
+            }
+            
+            document.getElementById('statusLocal').innerHTML = html;
+        }
+
+        function limpiarStorage() {
+            localStorage.clear();
+            alert('✅ LocalStorage limpiado');
+            verificarStorage();
+        }
+
+        async function testLogin() {
+            const usuario = document.getElementById('testUser').value;
+            const password = document.getElementById('testPass').value;
+            
+            const resultDiv = document.getElementById('loginResult');
+            resultDiv.innerHTML = '<div class="status info">⏳ Haciendo login...</div>';
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        usernameOrEmail: usuario,
+                        password: password
+                    })
+                });
+                
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (response.ok) {
+                    // Guardar en localStorage
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('usuario', JSON.stringify({
+                        id: data.id,
+                        username: data.username,
+                        email: data.email,
+                        nombreCompleto: data.nombreCompleto,
+                        rol: data.rol
+                    }));
+                    
+                    resultDiv.innerHTML = `
+                        <div class="status success">✅ Login exitoso!</div>
+                        <pre class="json">${JSON.stringify(data, null, 2)}</pre>
+                        <button onclick="verificarStorage()">📊 Ver LocalStorage</button>
+                    `;
+                    
+                    verificarStorage();
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="status error">❌ Login fallido (${response.status})</div>
+                        <pre class="json">${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status error">❌ Error de conexión</div>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+
+        async function testReservasEndpoint() {
+            const token = localStorage.getItem('token');
+            const resultDiv = document.getElementById('reservasResult');
+            
+            if (!token) {
+                resultDiv.innerHTML = '<div class="status error">❌ No hay token. Haz login primero.</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="status info">⏳ Consultando reservas...</div>';
+            
+            try {
+                const response = await fetch(`${API_URL}/reservas/mis-reservas`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                console.log('Reservas response status:', response.status);
+                
+                if (response.ok) {
+                    const reservas = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="status success">✅ Endpoint funciona! (${reservas.length} reservas)</div>
+                        <pre class="json">${JSON.stringify(reservas, null, 2)}</pre>
+                    `;
+                } else {
+                    const error = await response.text();
+                    resultDiv.innerHTML = `
+                        <div class="status error">❌ Error ${response.status}</div>
+                        <pre>${error}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status error">❌ Error de conexión</div>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+
+        // Verificar al cargar
+        verificarStorage();
+        
+        // Auto-actualizar cada 2 segundos
+        setInterval(verificarStorage, 2000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Token</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .result {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            border-left-color: #f44336;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test de Token JWT</h1>
+    
+    <div>
+        <h2>Token Almacenado:</h2>
+        <div id="tokenInfo" class="result"></div>
+    </div>
+
+    <div>
+        <h2>Usuario Almacenado:</h2>
+        <div id="usuarioInfo" class="result"></div>
+    </div>
+
+    <div>
+        <h2>Acciones:</h2>
+        <button onclick="testMisReservas()">Test /api/reservas/mis-reservas</button>
+        <button onclick="testServicios()">Test /api/servicios</button>
+        <button onclick="testBarberos()">Test /api/barberos/disponibles</button>
+        <button onclick="clearSession()">Limpiar Sesión</button>
+    </div>
+
+    <div>
+        <h2>Resultado:</h2>
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8081/api';
+        
+        // Mostrar info del token
+        window.onload = function() {
+            const token = localStorage.getItem('token');
+            const usuarioStr = localStorage.getItem('usuario');
+            
+            if (token) {
+                document.getElementById('tokenInfo').innerHTML = `
+                    <strong>Token existe:</strong> ✅ Sí<br>
+                    <strong>Longitud:</strong> ${token.length} caracteres<br>
+                    <strong>Primeros 50 chars:</strong> ${token.substring(0, 50)}...<br>
+                    <strong>Últimos 20 chars:</strong> ...${token.substring(token.length - 20)}
+                `;
+            } else {
+                document.getElementById('tokenInfo').innerHTML = '<strong>Token existe:</strong> ❌ No';
+                document.getElementById('tokenInfo').classList.add('error');
+            }
+            
+            if (usuarioStr) {
+                try {
+                    const usuario = JSON.parse(usuarioStr);
+                    document.getElementById('usuarioInfo').innerHTML = `
+                        <strong>Usuario:</strong> ${usuario.username}<br>
+                        <strong>Nombre:</strong> ${usuario.nombreCompleto}<br>
+                        <strong>Email:</strong> ${usuario.email}<br>
+                        <strong>Rol:</strong> ${usuario.rol}<br>
+                        <strong>ID:</strong> ${usuario.id}
+                    `;
+                } catch (e) {
+                    document.getElementById('usuarioInfo').innerHTML = '<strong>Error al parsear usuario:</strong> ' + e.message;
+                    document.getElementById('usuarioInfo').classList.add('error');
+                }
+            } else {
+                document.getElementById('usuarioInfo').innerHTML = '<strong>Usuario existe:</strong> ❌ No';
+                document.getElementById('usuarioInfo').classList.add('error');
+            }
+        };
+
+        async function testMisReservas() {
+            const token = localStorage.getItem('token');
+            document.getElementById('resultado').innerHTML = '<p>⏳ Haciendo petición a /api/reservas/mis-reservas...</p>';
+            
+            try {
+                console.log('🔍 Enviando petición con token:', token ? 'Sí' : 'No');
+                console.log('🔍 Headers:', { 'Authorization': 'Bearer ' + token });
+                
+                const response = await fetch(API_URL + '/reservas/mis-reservas', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('📥 Respuesta:', response.status, response.statusText);
+                
+                const data = await response.json().catch(() => response.text());
+                
+                document.getElementById('resultado').innerHTML = `
+                    <div class="result ${response.ok ? '' : 'error'}">
+                        <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                        <strong>Headers de respuesta:</strong><br>
+                        ${[...response.headers.entries()].map(([k, v]) => k + ': ' + v).join('<br>')}<br>
+                        <strong>Respuesta:</strong>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('resultado').innerHTML = `
+                    <div class="result error">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testServicios() {
+            document.getElementById('resultado').innerHTML = '<p>⏳ Haciendo petición a /api/servicios...</p>';
+            
+            try {
+                const response = await fetch(API_URL + '/servicios');
+                const data = await response.json();
+                
+                document.getElementById('resultado').innerHTML = `
+                    <div class="result ${response.ok ? '' : 'error'}">
+                        <strong>Status:</strong> ${response.status}<br>
+                        <strong>Servicios encontrados:</strong> ${data.length}<br>
+                        <strong>Respuesta:</strong>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('resultado').innerHTML = `
+                    <div class="result error">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testBarberos() {
+            document.getElementById('resultado').innerHTML = '<p>⏳ Haciendo petición a /api/barberos/disponibles...</p>';
+            
+            try {
+                const response = await fetch(API_URL + '/barberos/disponibles');
+                const data = await response.json();
+                
+                document.getElementById('resultado').innerHTML = `
+                    <div class="result ${response.ok ? '' : 'error'}">
+                        <strong>Status:</strong> ${response.status}<br>
+                        <strong>Barberos encontrados:</strong> ${data.length}<br>
+                        <strong>Respuesta:</strong>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('resultado').innerHTML = `
+                    <div class="result error">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function clearSession() {
+            localStorage.clear();
+            alert('Sesión limpiada. Recarga la página.');
+            location.reload();
+        }
+    </script>
+</body>
+</html>

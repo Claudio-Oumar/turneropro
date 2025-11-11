@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Simple - TurneroPro</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; margin-bottom: 20px; }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover { background: #005a9e; }
+        .log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log div { margin: 5px 0; }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        .info { color: #569cd6; }
+        .warning { color: #ce9178; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Simple de Login</h1>
+        
+        <div>
+            <button onclick="paso1()">1️⃣ Limpiar LocalStorage</button>
+            <button onclick="paso2()">2️⃣ Hacer Login (cliente1)</button>
+            <button onclick="paso3()">3️⃣ Verificar LocalStorage</button>
+            <button onclick="paso4()">4️⃣ Ir a Cliente Panel</button>
+        </div>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8081/api';
+        const log = document.getElementById('log');
+
+        function addLog(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+            console.log(message);
+        }
+
+        function paso1() {
+            addLog('🧹 Limpiando LocalStorage...', 'warning');
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            const token = localStorage.getItem('token');
+            const usuario = localStorage.getItem('usuario');
+            
+            if (!token && !usuario) {
+                addLog('✅ LocalStorage limpiado correctamente', 'success');
+            } else {
+                addLog('❌ Error: LocalStorage no se limpió', 'error');
+            }
+        }
+
+        async function paso2() {
+            addLog('🔐 Iniciando proceso de login...', 'info');
+            addLog('📤 Enviando credenciales: cliente1 / password123', 'info');
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        usernameOrEmail: 'cliente1',
+                        password: 'password123'
+                    })
+                });
+                
+                addLog(`📡 Response Status: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                const data = await response.json();
+                addLog(`📦 Response Data: ${JSON.stringify(data)}`, 'info');
+                
+                if (response.ok) {
+                    addLog('✅ Login exitoso en el servidor', 'success');
+                    addLog(`👤 Usuario: ${data.username}`, 'info');
+                    addLog(`🎭 Rol: ${data.rol}`, 'info');
+                    addLog(`🔑 Token length: ${data.token ? data.token.length : 0}`, 'info');
+                    
+                    // Guardar en localStorage
+                    addLog('💾 Guardando en localStorage...', 'warning');
+                    
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('usuario', JSON.stringify({
+                        id: data.id,
+                        username: data.username,
+                        email: data.email,
+                        nombreCompleto: data.nombreCompleto,
+                        rol: data.rol
+                    }));
+                    
+                    addLog('💾 Datos guardados', 'info');
+                    
+                    // Verificar que se guardó
+                    setTimeout(() => {
+                        const tokenGuardado = localStorage.getItem('token');
+                        const usuarioGuardado = localStorage.getItem('usuario');
+                        
+                        if (tokenGuardado && usuarioGuardado) {
+                            addLog('✅ ¡Verificado! Token y usuario están en localStorage', 'success');
+                            addLog(`   Token length: ${tokenGuardado.length}`, 'success');
+                            addLog(`   Usuario: ${usuarioGuardado.substring(0, 50)}...`, 'success');
+                        } else {
+                            addLog('❌ ERROR: Los datos NO se guardaron en localStorage', 'error');
+                        }
+                    }, 100);
+                    
+                } else {
+                    addLog(`❌ Login falló: ${data.mensaje}`, 'error');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Error de red: ${error.message}`, 'error');
+            }
+        }
+
+        function paso3() {
+            addLog('🔍 Verificando estado actual del LocalStorage...', 'warning');
+            
+            const token = localStorage.getItem('token');
+            const usuarioStr = localStorage.getItem('usuario');
+            
+            if (token) {
+                addLog(`✅ Token encontrado (${token.length} caracteres)`, 'success');
+                addLog(`   Primeros 50 chars: ${token.substring(0, 50)}...`, 'info');
+            } else {
+                addLog('❌ No hay token en localStorage', 'error');
+            }
+            
+            if (usuarioStr) {
+                addLog('✅ Usuario encontrado', 'success');
+                try {
+                    const usuario = JSON.parse(usuarioStr);
+                    addLog(`   Username: ${usuario.username}`, 'info');
+                    addLog(`   Rol: ${usuario.rol}`, 'info');
+                    addLog(`   Nombre: ${usuario.nombreCompleto}`, 'info');
+                    addLog(`   JSON: ${usuarioStr}`, 'info');
+                } catch (e) {
+                    addLog(`❌ Error al parsear usuario: ${e.message}`, 'error');
+                }
+            } else {
+                addLog('❌ No hay usuario en localStorage', 'error');
+            }
+        }
+
+        function paso4() {
+            addLog('🚀 Verificando antes de redirigir...', 'warning');
+            
+            const token = localStorage.getItem('token');
+            const usuarioStr = localStorage.getItem('usuario');
+            
+            if (!token) {
+                addLog('❌ ALTO: No hay token. NO redirigiendo.', 'error');
+                return;
+            }
+            
+            if (!usuarioStr) {
+                addLog('❌ ALTO: No hay usuario. NO redirigiendo.', 'error');
+                return;
+            }
+            
+            let usuario;
+            try {
+                usuario = JSON.parse(usuarioStr);
+            } catch (e) {
+                addLog(`❌ ALTO: Error al parsear usuario: ${e.message}`, 'error');
+                return;
+            }
+            
+            if (usuario.rol !== 'CLIENTE') {
+                addLog(`❌ ALTO: Rol incorrecto (${usuario.rol}). NO redirigiendo.`, 'error');
+                return;
+            }
+            
+            addLog('✅ Todas las verificaciones pasaron', 'success');
+            addLog('✅ Token: OK', 'success');
+            addLog('✅ Usuario: OK', 'success');
+            addLog('✅ Rol: CLIENTE', 'success');
+            addLog('', 'info');
+            addLog('🔄 Redirigiendo a cliente-panel.html en 3 segundos...', 'warning');
+            addLog('⚠️  ABRE LA CONSOLA DEL NAVEGADOR (F12) AHORA', 'warning');
+            
+            let countdown = 3;
+            const interval = setInterval(() => {
+                addLog(`⏱️  ${countdown}...`, 'warning');
+                countdown--;
+                if (countdown < 0) {
+                    clearInterval(interval);
+                    addLog('🚀 REDIRIGIENDO AHORA!', 'success');
+                    window.location.replace('/cliente-panel.html');
+                }
+            }, 1000);
+        }
+
+        // Log inicial
+        addLog('✅ Página cargada. Presiona los botones en orden 1→2→3→4', 'success');
+    </script>
+</body>
+</html>
