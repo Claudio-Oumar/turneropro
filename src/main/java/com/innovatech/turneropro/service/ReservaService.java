@@ -109,4 +109,22 @@ public class ReservaService {
         
         return reservaCancelada;
     }
+    
+    public Reserva completarReserva(Long reservaId) {
+        Reserva reserva = reservaRepository.findById(reservaId)
+                .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+        
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!reserva.getBarbero().getUsername().equals(username)) {
+            throw new RuntimeException("No tienes permiso para completar esta reserva");
+        }
+        
+        if (reserva.getEstado() != Reserva.EstadoReserva.CONFIRMADA) {
+            throw new RuntimeException("Solo se pueden completar reservas confirmadas");
+        }
+        
+        reserva.setEstado(Reserva.EstadoReserva.COMPLETADA);
+        
+        return reservaRepository.save(reserva);
+    }
 }

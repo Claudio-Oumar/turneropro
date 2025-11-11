@@ -79,6 +79,11 @@ function configurarEventListeners() {
         window.location.replace('/login.html');
     });
     document.getElementById('formNuevaReserva').addEventListener('submit', crearReserva);
+    
+    // Listeners para cargar horarios disponibles
+    document.getElementById('barberoId').addEventListener('change', cargarHorariosDisponibles);
+    document.getElementById('servicioId').addEventListener('change', cargarHorariosDisponibles);
+    document.getElementById('fecha').addEventListener('change', cargarHorariosDisponibles);
 }
 
 async function crearReserva(e) {
@@ -86,10 +91,21 @@ async function crearReserva(e) {
     
     if (!verificarAutenticacion()) return;
     
+    const fecha = document.getElementById('fecha').value;
+    const hora = document.getElementById('horaInicio').value;
+    
+    if (!fecha || !hora) {
+        alert('❌ Por favor selecciona fecha y hora');
+        return;
+    }
+    
+    // Combinar fecha y hora en formato ISO (hora ya incluye segundos HH:mm:ss)
+    const fechaHoraInicio = fecha + 'T' + hora;
+    
     const data = {
         barberoId: parseInt(document.getElementById('barberoId').value),
         servicioId: parseInt(document.getElementById('servicioId').value),
-        fechaHoraInicio: document.getElementById('fechaHora').value,
+        fechaHoraInicio: fechaHoraInicio,
         notasCliente: document.getElementById('notas').value
     };
     
@@ -113,6 +129,8 @@ async function crearReserva(e) {
         console.log('✅ Reserva creada:', reserva);
         alert('✅ Reserva creada exitosamente');
         document.getElementById('formNuevaReserva').reset();
+        document.getElementById('horaInicio').disabled = true;
+        document.getElementById('horaInicio').innerHTML = '<option value="">Primero seleccione barbero, servicio y fecha</option>';
         cargarMisReservas().catch(err => console.warn('No se pudieron recargar las reservas'));
     } catch (error) {
         console.error('❌ Error al crear reserva:', error);
@@ -227,5 +245,66 @@ async function cancelarReserva(reservaId) {
         }
     } catch (error) {
         alert('Error de conexion');
+    }
+}
+
+async function cargarHorariosDisponibles() {
+    const barberoId = document.getElementById('barberoId').value;
+    const servicioId = document.getElementById('servicioId').value;
+    const fecha = document.getElementById('fecha').value;
+    const selectHora = document.getElementById('horaInicio');
+    
+    // Si falta algún campo, deshabilitar selector de hora
+    if (!barberoId || !servicioId || !fecha) {
+        selectHora.disabled = true;
+        selectHora.innerHTML = '<option value="">Primero seleccione barbero, servicio y fecha</option>';
+        return;
+    }
+    
+    try {
+        console.log('🕐 Cargando horarios disponibles...');
+        const url = `${API_URL}/barberos/${barberoId}/horarios-disponibles?fecha=${fecha}&servicioId=${servicioId}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ mensaje: 'Error al cargar horarios' }));
+            selectHora.disabled = true;
+            selectHora.innerHTML = `<option value="">❌ ${error.mensaje || 'El barbero no trabaja ese día'}</option>`;
+            return;
+        }
+        
+        const data = await response.json();
+        const horarios = data.horarios || [];
+        
+        console.log('✅ Horarios disponibles:', horarios.length);
+        
+        if (horarios.length === 0) {
+            selectHora.disabled = true;
+            selectHora.innerHTML = '<option value="">❌ No hay horarios disponibles ese día</option>';
+            return;
+        }
+        
+        // Llenar selector con horarios disponibles
+        selectHora.disabled = false;
+        selectHora.innerHTML = '<option value="">Seleccione una hora...</option>';
+        
+        horarios.forEach(function(hora) {
+            const option = document.createElement('option');
+            option.value = hora;
+            
+            // Formatear hora a 12 horas con AM/PM
+            const [hours, minutes] = hora.split(':');
+            let hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            hour = hour % 12 || 12; // Convertir 0 a 12, y mantener 1-11
+            option.textContent = `${hour}:${minutes} ${ampm}`;
+            
+            selectHora.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error('❌ Error al cargar horarios:', error);
+        selectHora.disabled = true;
+        selectHora.innerHTML = '<option value="">❌ Error al cargar horarios</option>';
     }
 }

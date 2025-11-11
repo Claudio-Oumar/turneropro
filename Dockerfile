@@ -16,6 +16,12 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
+# Instalar tzdata para zona horaria
+RUN apk add --no-cache tzdata
+
+# Configurar zona horaria de Ecuador/Colombia
+ENV TZ=America/Guayaquil
+
 # Copiar el JAR compilado desde el stage anterior
 COPY --from=build /app/target/*.jar app.jar
 

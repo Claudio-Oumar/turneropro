@@ -167,22 +167,23 @@ public class DataSeeder implements CommandLineRunner {
         Usuario barbero2 = usuarioRepository.findByUsername("barbero2").orElse(null);
         
         if (barbero1 != null) {
-            // Horarios de lunes a viernes 9:00-18:00 para barbero1
-            crearHorario(barbero1, DayOfWeek.MONDAY, LocalTime.of(9, 0), LocalTime.of(18, 0));
-            crearHorario(barbero1, DayOfWeek.TUESDAY, LocalTime.of(9, 0), LocalTime.of(18, 0));
-            crearHorario(barbero1, DayOfWeek.WEDNESDAY, LocalTime.of(9, 0), LocalTime.of(18, 0));
-            crearHorario(barbero1, DayOfWeek.THURSDAY, LocalTime.of(9, 0), LocalTime.of(18, 0));
-            crearHorario(barbero1, DayOfWeek.FRIDAY, LocalTime.of(9, 0), LocalTime.of(18, 0));
+            // Horarios de lunes a sábado 10:00 AM - 8:00 PM para barbero1
+            crearHorario(barbero1, DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(20, 0));
+            crearHorario(barbero1, DayOfWeek.TUESDAY, LocalTime.of(10, 0), LocalTime.of(20, 0));
+            crearHorario(barbero1, DayOfWeek.WEDNESDAY, LocalTime.of(10, 0), LocalTime.of(20, 0));
+            crearHorario(barbero1, DayOfWeek.THURSDAY, LocalTime.of(10, 0), LocalTime.of(20, 0));
+            crearHorario(barbero1, DayOfWeek.FRIDAY, LocalTime.of(10, 0), LocalTime.of(20, 0));
+            crearHorario(barbero1, DayOfWeek.SATURDAY, LocalTime.of(10, 0), LocalTime.of(20, 0));
         }
         
         if (barbero2 != null) {
-            // Horarios de lunes a sábado 10:00-19:00 para barbero2
-            crearHorario(barbero2, DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(19, 0));
-            crearHorario(barbero2, DayOfWeek.TUESDAY, LocalTime.of(10, 0), LocalTime.of(19, 0));
-            crearHorario(barbero2, DayOfWeek.WEDNESDAY, LocalTime.of(10, 0), LocalTime.of(19, 0));
-            crearHorario(barbero2, DayOfWeek.THURSDAY, LocalTime.of(10, 0), LocalTime.of(19, 0));
-            crearHorario(barbero2, DayOfWeek.FRIDAY, LocalTime.of(10, 0), LocalTime.of(19, 0));
-            crearHorario(barbero2, DayOfWeek.SATURDAY, LocalTime.of(10, 0), LocalTime.of(19, 0));
+            // Horarios de lunes a sábado 10:00 AM - 8:00 PM para barbero2
+            crearHorario(barbero2, DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(20, 0));
+            crearHorario(barbero2, DayOfWeek.TUESDAY, LocalTime.of(10, 0), LocalTime.of(20, 0));
+            crearHorario(barbero2, DayOfWeek.WEDNESDAY, LocalTime.of(10, 0), LocalTime.of(20, 0));
+            crearHorario(barbero2, DayOfWeek.THURSDAY, LocalTime.of(10, 0), LocalTime.of(20, 0));
+            crearHorario(barbero2, DayOfWeek.FRIDAY, LocalTime.of(10, 0), LocalTime.of(20, 0));
+            crearHorario(barbero2, DayOfWeek.SATURDAY, LocalTime.of(10, 0), LocalTime.of(20, 0));
         }
         
         System.out.println("[OK] Horarios configurados para 2 barberos");

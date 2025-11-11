@@ -51,6 +51,17 @@ public class ReservaController {
         }
     }
     
+    @PutMapping("/{reservaId}/completar")
+    @PreAuthorize("hasRole('BARBERO')")
+    public ResponseEntity<?> completarReserva(@PathVariable Long reservaId) {
+        try {
+            Reserva reserva = reservaService.completarReserva(reservaId);
+            return ResponseEntity.ok(reserva);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
+    
     // Clase auxiliar
     static class ErrorResponse {
         private String mensaje;

@@ -42,6 +42,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/servicios/**").permitAll()
                 .requestMatchers("/api/barberos/disponibles").permitAll()
+                .requestMatchers("/api/barberos/*/horarios-disponibles").permitAll()
                 .requestMatchers("/", "/index.html", "/*.html", "/*.css", "/*.js", "/*.png", "/*.jpg").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                 .anyRequest().authenticated()
