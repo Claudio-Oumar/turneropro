@@ -36,11 +36,19 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
         
-        <!-- SQLite JDBC Driver -->
+        <!-- PostgreSQL Driver (para Railway) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        
+        <!-- SQLite JDBC Driver (mantener para desarrollo local) -->
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
             <version>3.40.0.0</version>
+            <scope>runtime</scope>
         </dependency>
         
         <!-- Hibernate SQLite Dialect -->
