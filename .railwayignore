@@ -1,0 +1,9 @@
+# Ignorar archivos innecesarios en Railway
+.git/
+.vscode/
+.idea/
+*.md
+!README.md
+data/
+target/classes/
+*.log
