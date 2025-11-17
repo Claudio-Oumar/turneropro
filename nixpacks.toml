@@ -1,16 +1,8 @@
 [phases.setup]
 nixPkgs = ['maven', 'openjdk17']
 
-[phases.install]
-cmds = ['mvn dependency:resolve']
-
 [phases.build]
-cmds = [
-  'mvn clean package -DskipTests -Dmaven.test.skip=true',
-  'echo "=== Verificando archivos generados ==="',
-  'ls -la target/ || echo "No target directory"',
-  'file target/turnero-pro.jar || echo "JAR not found"'
-]
+cmds = ['mvn clean package -DskipTests']
 
 [start]
 cmd = 'java -Dserver.port=$PORT -jar target/turnero-pro.jar'
