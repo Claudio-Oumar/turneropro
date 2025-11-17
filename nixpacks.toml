@@ -3,9 +3,9 @@ nixPkgs = ['maven', 'openjdk17']
 
 [phases.build]
 cmds = [
-  'mvn clean install -DskipTests -Dmaven.test.skip=true',
+  'mvn clean package -DskipTests -Dmaven.test.skip=true',
   'ls -la target/'
 ]
 
 [start]
-cmd = 'java -Dserver.port=$PORT -jar target/*.jar'
+cmd = 'java -Dserver.port=$PORT -jar target/turnero-pro.jar'
