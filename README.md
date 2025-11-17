@@ -445,36 +445,42 @@ docker-compose restart app
 
 La aplicación incluye un sistema completo de notificaciones por email:
 
-### Configuración para Desarrollo (MailHog)
+### Configuración de Gmail
 
-Por defecto, la aplicación usa MailHog para interceptar correos en desarrollo:
-- SMTP: localhost:1025
-- Web UI: http://localhost:8025
-- No requiere autenticación
-- Todos los emails se capturan localmente
+El sistema usa **ServicioCorreoSingleton** (patrón del proyecto CineMax) para enviar correos reales a Gmail.
 
-### Configuración para Producción (Gmail)
+**Pasos para configurar:**
 
-Para usar Gmail en producción, modifica `application.properties`:
+1. **Obtener App Password de Google:**
+   - Ve a https://myaccount.google.com/apppasswords
+   - Activa la verificación en 2 pasos si no la tienes
+   - Genera una contraseña de aplicación:
+     - Selecciona "Correo"
+     - Selecciona "Otro dispositivo"
+     - Copia el password de 16 caracteres (ej: `abcdefghijklmnop`)
 
-```properties
-spring.mail.host=smtp.gmail.com
-spring.mail.port=587
-spring.mail.username=tu-email@gmail.com
-spring.mail.password=tu-app-password
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
-```
+2. **Editar `ServicioCorreoSingleton.java`:**
+   ```java
+   // Líneas 16-17
+   private final String remitente = "barbero833@gmail.com";
+   private final String clave = "tu-app-password-de-16-caracteres";  // Sin espacios
+   ```
 
-**Nota:** Necesitas crear una "contraseña de aplicación" en tu cuenta de Google (requiere 2FA habilitado).
+3. **Recompilar y reiniciar Docker:**
+   ```powershell
+   docker-compose down
+   docker-compose up --build
+   ```
 
 ### Tipos de Emails Enviados
 
-1. **Confirmación de reserva** → Cliente
-2. **Notificación de nueva reserva** → Barbero
+1. **Confirmación de reserva** → Cliente (cliente200201@gmail.com)
+2. **Notificación de nueva reserva** → Barbero (barbero833@gmail.com)
 3. **Cancelación de reserva** → Cliente y Barbero
 4. **Reprogramación de reserva** → Cliente y Barbero
 5. **Recordatorio 24h antes** → Cliente (automático)
+
+**Nota:** Todos los correos se envían desde `barbero833@gmail.com` a direcciones reales.
 
 ## 🚀 Próximos Pasos (Sprint 3)
 

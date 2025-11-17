@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - TurneroPro</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <h2>TurneroPro - Mi Perfil</h2>
+            </div>
+            <div class="nav-links">
+                <a href="/cliente-panel.html">← Volver a Reservas</a>
+                <span id="nombreUsuario" style="color: white; margin: 0 1rem;"></span>
+                <a href="#" id="btnCerrarSesion">Cerrar Sesión</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container dashboard">
+        <div class="dashboard-header">
+            <h1>Mi Perfil</h1>
+            <p>Actualiza tu información personal y contraseña</p>
+        </div>
+
+        <div class="card">
+            <h3>Información Personal</h3>
+            <div id="mensajePerfil"></div>
+            <form id="formEditarPerfil">
+                <div class="form-group">
+                    <label for="perfilNombreCompleto">Nombre Completo *</label>
+                    <input type="text" id="perfilNombreCompleto" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="perfilEmail">Email *</label>
+                    <input type="email" id="perfilEmail" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="perfilTelefono">Teléfono</label>
+                    <input type="tel" id="perfilTelefono" placeholder="Ej: 0991234567">
+                </div>
+                
+                <button type="submit" class="btn-primary">Guardar Cambios</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Cambiar Contraseña</h3>
+            <div id="mensajePassword"></div>
+            <form id="formCambiarPassword">
+                <div class="form-group">
+                    <label for="passwordActual">Contraseña Actual *</label>
+                    <input type="password" id="passwordActual" required placeholder="Tu contraseña actual">
+                </div>
+                
+                <div class="form-group">
+                    <label for="passwordNueva">Nueva Contraseña *</label>
+                    <input type="password" id="passwordNueva" required placeholder="Mínimo 6 caracteres">
+                </div>
+                
+                <div class="form-group">
+                    <label for="passwordConfirmar">Confirmar Nueva Contraseña *</label>
+                    <input type="password" id="passwordConfirmar" required placeholder="Repite la nueva contraseña">
+                </div>
+                
+                <button type="submit" class="btn-warning">Cambiar Contraseña</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8081/api';
+        let token = localStorage.getItem('token');
+        let usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+        // Verificar autenticación
+        if (!token || !usuario.id) {
+            alert('No hay sesión activa. Por favor inicia sesión.');
+            window.location.replace('/login.html');
+        }
+
+        // Inicializar
+        document.getElementById('nombreUsuario').textContent = usuario.nombreCompleto;
+        document.getElementById('btnCerrarSesion').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.clear();
+            window.location.replace('/login.html');
+        });
+
+        // Cargar datos del perfil
+        cargarDatosPerfil();
+
+        function cargarDatosPerfil() {
+            document.getElementById('perfilNombreCompleto').value = usuario.nombreCompleto || '';
+            document.getElementById('perfilEmail').value = usuario.email || '';
+            document.getElementById('perfilTelefono').value = usuario.telefono || '';
+        }
+
+        // Actualizar información personal
+        document.getElementById('formEditarPerfil').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const mensajeDiv = document.getElementById('mensajePerfil');
+            mensajeDiv.innerHTML = '';
+            
+            const data = {
+                nombreCompleto: document.getElementById('perfilNombreCompleto').value,
+                email: document.getElementById('perfilEmail').value,
+                telefono: document.getElementById('perfilTelefono').value
+            };
+            
+            try {
+                const response = await fetch(API_URL + '/auth/perfil', {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Authorization': 'Bearer ' + token 
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({ mensaje: 'Error desconocido' }));
+                    mensajeDiv.innerHTML = '<div class="alert alert-error">❌ ' + (error.mensaje || 'Error al actualizar perfil') + '</div>';
+                    return;
+                }
+                
+                const usuarioActualizado = await response.json();
+                
+                // Actualizar datos locales
+                usuario.nombreCompleto = usuarioActualizado.nombreCompleto;
+                usuario.email = usuarioActualizado.email;
+                usuario.telefono = usuarioActualizado.telefono;
+                localStorage.setItem('usuario', JSON.stringify(usuario));
+                
+                document.getElementById('nombreUsuario').textContent = usuario.nombreCompleto;
+                
+                mensajeDiv.innerHTML = '<div class="alert alert-success">✅ Información actualizada correctamente</div>';
+                
+                setTimeout(() => { mensajeDiv.innerHTML = ''; }, 5000);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                mensajeDiv.innerHTML = '<div class="alert alert-error">❌ Error de conexión con el servidor</div>';
+            }
+        });
+
+        // Cambiar contraseña
+        document.getElementById('formCambiarPassword').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const mensajeDiv = document.getElementById('mensajePassword');
+            mensajeDiv.innerHTML = '';
+            
+            const passwordActual = document.getElementById('passwordActual').value;
+            const passwordNueva = document.getElementById('passwordNueva').value;
+            const passwordConfirmar = document.getElementById('passwordConfirmar').value;
+            
+            if (passwordNueva.length < 6) {
+                mensajeDiv.innerHTML = '<div class="alert alert-error">❌ La nueva contraseña debe tener al menos 6 caracteres</div>';
+                return;
+            }
+            
+            if (passwordNueva !== passwordConfirmar) {
+                mensajeDiv.innerHTML = '<div class="alert alert-error">❌ Las contraseñas nuevas no coinciden</div>';
+                return;
+            }
+            
+            const data = {
+                nombreCompleto: usuario.nombreCompleto,
+                email: usuario.email,
+                telefono: usuario.telefono,
+                passwordActual: passwordActual,
+                passwordNueva: passwordNueva
+            };
+            
+            try {
+                const response = await fetch(API_URL + '/auth/perfil', {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Authorization': 'Bearer ' + token 
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({ mensaje: 'Error desconocido' }));
+                    mensajeDiv.innerHTML = '<div class="alert alert-error">❌ ' + (error.mensaje || 'Error al cambiar contraseña') + '</div>';
+                    return;
+                }
+                
+                // Limpiar campos
+                document.getElementById('passwordActual').value = '';
+                document.getElementById('passwordNueva').value = '';
+                document.getElementById('passwordConfirmar').value = '';
+                
+                mensajeDiv.innerHTML = '<div class="alert alert-success">✅ Contraseña cambiada correctamente</div>';
+                
+                setTimeout(() => { mensajeDiv.innerHTML = ''; }, 5000);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                mensajeDiv.innerHTML = '<div class="alert alert-error">❌ Error de conexión con el servidor</div>';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -16,8 +16,9 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-# Instalar tzdata para zona horaria
-RUN apk add --no-cache tzdata
+# Instalar tzdata y certificados SSL para Gmail
+RUN apk add --no-cache tzdata ca-certificates && \
+    update-ca-certificates
 
 # Configurar zona horaria de Ecuador/Colombia
 ENV TZ=America/Guayaquil
