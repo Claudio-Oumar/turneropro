@@ -32,5 +32,5 @@ EXPOSE 8081
 # Variables de entorno
 ENV SPRING_PROFILES_ACTIVE=prod
 
-# Ejecutar la aplicación
-ENTRYPOINT ["java", "-Xmx512m", "-Xms256m", "-Dserver.port=${PORT:-8081}", "-jar", "app.jar"]
+# Ejecutar la aplicación con script shell
+CMD ["sh", "-c", "java -Xmx512m -Xms256m -Dserver.port=${PORT:-8081} -jar app.jar"]
