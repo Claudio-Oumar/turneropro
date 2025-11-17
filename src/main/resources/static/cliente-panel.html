@@ -72,6 +72,54 @@
         </div>
     </div>
 
+    <!-- Modal para cancelar reserva -->
+    <div id="modalCancelar" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Cancelar Reserva</h3>
+                <span class="close" onclick="cerrarModalCancelar()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas cancelar esta reserva?</p>
+                <div class="form-group">
+                    <label for="motivoCancelacion">Motivo de cancelación (opcional):</label>
+                    <textarea id="motivoCancelacion" rows="3" placeholder="Indica el motivo de la cancelación..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="cerrarModalCancelar()">Volver</button>
+                <button class="btn-danger" onclick="confirmarCancelacion()">Confirmar Cancelación</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para reprogramar reserva -->
+    <div id="modalReprogramar" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Reprogramar Reserva</h3>
+                <span class="close" onclick="cerrarModalReprogramar()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="infoReservaActual"></p>
+                <div class="form-group">
+                    <label for="nuevaFecha">Nueva Fecha *</label>
+                    <input type="date" id="nuevaFecha" required>
+                </div>
+                <div class="form-group">
+                    <label for="nuevaHora">Nueva Hora *</label>
+                    <select id="nuevaHora" required disabled>
+                        <option value="">Primero seleccione una fecha</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="cerrarModalReprogramar()">Cancelar</button>
+                <button class="btn-primary" onclick="confirmarReprogramacion()">Confirmar Cambio</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/cliente-panel.js"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # TurneroPro - Barber Shop Edition 💈
 
-> Sistema de gestión de turnos para barberías - Sprint 1  
+> Sistema de gestión de turnos para barberías - Sprint 2  
 > **Equipo:** Innovatech DCJ  
 > **Institución:** Escuela Politécnica Nacional  
 > **Materia:** Calidad de Software
@@ -9,13 +9,29 @@
 
 **TurneroPro – Barber Shop Edition** es una aplicación web diseñada especialmente para barberías que desean organizar sus turnos de manera digital. Los clientes pueden ver horarios disponibles, reservar citas, cancelarlas o reprogramarlas, mientras los barberos gestionan su agenda diaria y sus servicios ofrecidos.
 
-### 🎯 Objetivos del Sprint 1
+### 🎯 Objetivos del Sprint 1 ✅
 
-Este sprint implementa las funcionalidades básicas:
+Este sprint implementó las funcionalidades básicas:
 - **O1H2**: Registro e inicio de sesión del cliente
 - **O1H5**: Definir horas de atención del barbero
 - **O1H3**: Reservar un turno eligiendo barbero, servicio, día y hora
 - **O1H1**: Organizar el tiempo asignado para evitar solapamientos
+
+### 🎯 Objetivos del Sprint 2 ✅
+
+Este sprint amplía la gestión de citas y notificaciones:
+- **O1H4**: Cancelación y reprogramación de citas
+  - Cliente puede cancelar reservas con motivo
+  - Cliente puede reprogramar citas a nueva fecha/hora
+  - Validación de disponibilidad en tiempo real
+- **Notificaciones por Email**:
+  - Confirmación de reserva al cliente
+  - Notificación al barbero de nueva reserva
+  - Notificación de cancelación a ambas partes
+  - Notificación de reprogramación a ambas partes
+- **Recordatorios Automáticos**:
+  - Sistema automático que envía recordatorio 24 horas antes de la cita
+  - Ejecución programada cada hora mediante scheduler
 
 ## 👥 Equipo de Desarrollo
 
@@ -28,12 +44,13 @@ Este sprint implementa las funcionalidades básicas:
 ## 🛠️ Stack Tecnológico
 
 ### Backend
-- **Java 17** - Lenguaje de programación
+- **Java 21** - Lenguaje de programación
 - **Spring Boot 3.2.0** - Framework principal
   - Spring Web (REST API)
   - Spring Data JPA (Persistencia)
   - Spring Security (Autenticación JWT)
-  - Spring Mail (Notificaciones)
+  - Spring Mail (Notificaciones por email)
+  - Spring Scheduling (Tareas programadas)
 - **SQLite 3.40** - Base de datos embebida (archivo local, sin servidor)
 - **Maven 3.9** - Gestión de dependencias
 
@@ -109,8 +126,8 @@ Una vez que los contenedores estén corriendo:
 
 | Servicio | URL | Descripción |
 |----------|-----|-------------|
-| **Aplicación Web** | http://localhost:8080 | Frontend y API REST |
-| **MailHog UI** | http://localhost:8025 | Interfaz para ver correos enviados |
+| **Aplicación Web** | http://localhost:8081 | Frontend y API REST |
+| **MailHog UI** | http://localhost:8025 | Interfaz para ver correos enviados (desarrollo) |
 | **Base de Datos** | `./data/turnero_pro.db` | Archivo SQLite embebido (creado automáticamente) |
 
 ### 5. Detener la aplicación
@@ -130,9 +147,9 @@ La aplicación viene con usuarios pre-cargados para pruebas:
 | Usuario | Contraseña | Rol | Email |
 |---------|-----------|-----|-------|
 | `admin` | `password123` | Administrador | admin@turneropro.com |
-| `barbero1` | `password123` | Barbero | barbero1@turneropro.com |
+| `barbero1` | `password123` | Barbero | barbero833@gmail.com |
 | `barbero2` | `password123` | Barbero | barbero2@turneropro.com |
-| `cliente1` | `password123` | Cliente | cliente1@turneropro.com |
+| `cliente1` | `password123` | Cliente | cliente200201@gmail.com |
 | `cliente2` | `password123` | Cliente | cliente2@turneropro.com |
 
 ### Servicios Pre-cargados
@@ -148,7 +165,7 @@ La aplicación viene con usuarios pre-cargados para pruebas:
 
 ### Base URL
 ```
-http://localhost:8080/api
+http://localhost:8081/api
 ```
 
 ### Endpoints Principales
@@ -239,6 +256,12 @@ Content-Type: application/json
 }
 ```
 
+**Reprogramar Reserva** (Solo CLIENTE)
+```http
+PUT /api/reservas/{reservaId}/reprogramar?nuevaFechaHora=2025-11-20T14:00:00
+Authorization: Bearer {token}
+```
+
 #### Horarios (Requiere autenticación)
 
 **Crear Horario** (Solo BARBERO)
@@ -295,7 +318,7 @@ innovatech-dcj/
 
 ### Escenario 1: Registro y Login de Cliente
 
-1. Abre http://localhost:8080
+1. Abre http://localhost:8081
 2. Haz clic en "Registrarse"
 3. Completa el formulario con rol "Cliente"
 4. Serás redirigido automáticamente al panel de cliente
@@ -320,15 +343,40 @@ innovatech-dcj/
    - Opcional: agrega notas
    - Haz clic en "Reservar Turno"
 3. Verás la reserva en "Mis Reservas"
-4. Abre http://localhost:8025 (MailHog) para ver el correo de confirmación
+4. Abre http://localhost:8025 (MailHog) para ver los correos:
+   - Confirmación al cliente (cliente200201@gmail.com)
+   - Notificación al barbero (barbero833@gmail.com)
 
 ### Escenario 4: Cliente Cancela una Reserva
 
 1. En el panel de cliente, sección "Mis Reservas"
-2. Haz clic en "Cancelar" en la reserva deseada
-3. Confirma la cancelación
-4. Verifica que el estado cambió a "CANCELADA"
-5. Revisa MailHog para ver el correo de cancelación
+2. Haz clic en "Cancelar" en una reserva con estado "CONFIRMADA"
+3. Ingresa el motivo de cancelación en el modal
+4. Confirma la cancelación
+5. Verifica que el estado cambió a "CANCELADA"
+6. Revisa MailHog para ver los correos de cancelación enviados al cliente y al barbero
+
+### Escenario 5: Cliente Reprograma una Reserva (Nuevo en Sprint 2)
+
+1. En el panel de cliente, sección "Mis Reservas"
+2. Haz clic en "Reprogramar" en una reserva con estado "CONFIRMADA"
+3. En el modal, selecciona:
+   - Nueva fecha
+   - Nueva hora (se cargan automáticamente las horas disponibles del barbero)
+4. Confirma la reprogramación
+5. Verifica que la fecha y hora se actualizaron
+6. Revisa MailHog para ver los correos de reprogramación enviados al cliente y al barbero
+
+### Escenario 6: Recordatorios Automáticos (Nuevo en Sprint 2)
+
+1. El sistema ejecuta automáticamente cada hora un scheduler
+2. Busca reservas confirmadas que ocurrirán en 24 horas (±1 hora)
+3. Envía recordatorio por email al cliente
+4. Marca la reserva como "recordatorio enviado"
+5. Para verificar:
+   - Crea una reserva para mañana a esta misma hora
+   - Espera a la siguiente ejecución del scheduler (cada hora en punto)
+   - Revisa MailHog para ver el recordatorio
 
 ## 🔧 Ejecutar sin Docker (Manual)
 
@@ -353,19 +401,27 @@ java -jar target/turnero-pro-1.0.0.jar
 ```
 
 3. **Acceder a la aplicación**
-   - Abre http://localhost:8080
+   - Abre http://localhost:8081
    - La base de datos SQLite se crea automáticamente en `./data/turnero_pro.db`
    - Los datos de prueba se cargan automáticamente al iniciar
+
+4. **Para probar emails (Opcional con MailHog)**
+```powershell
+# Iniciar Docker Desktop primero, luego:
+docker run -d -p 1025:1025 -p 8025:8025 --name mailhog mailhog/mailhog
+
+# Ver correos en: http://localhost:8025
+```
 
 > **Nota:** No necesitas instalar ni configurar ninguna base de datos. SQLite es un archivo embebido que se crea automáticamente.
 
 ## 🐛 Troubleshooting
 
-### Error: "Puerto 8080 ya está en uso"
+### Error: "Puerto 8081 ya está en uso"
 
 ```powershell
 # Windows: buscar proceso usando el puerto
-netstat -ano | findstr :8080
+netstat -ano | findstr :8081
 
 # Matar el proceso (reemplaza PID)
 taskkill /PID <PID> /F
@@ -385,18 +441,49 @@ Remove-Item ./data/turnero_pro.db
 docker-compose restart app
 ```
 
-## 🚀 Próximos Pasos (Sprints 2 y 3)
+## 📧 Sistema de Notificaciones (Sprint 2)
 
-- **Sprint 2**: 
-  - Reprogramación de citas
-  - Recordatorios automáticos 24 horas antes
-  - Panel administrativo con reportes básicos
-  
+La aplicación incluye un sistema completo de notificaciones por email:
+
+### Configuración para Desarrollo (MailHog)
+
+Por defecto, la aplicación usa MailHog para interceptar correos en desarrollo:
+- SMTP: localhost:1025
+- Web UI: http://localhost:8025
+- No requiere autenticación
+- Todos los emails se capturan localmente
+
+### Configuración para Producción (Gmail)
+
+Para usar Gmail en producción, modifica `application.properties`:
+
+```properties
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=tu-email@gmail.com
+spring.mail.password=tu-app-password
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+```
+
+**Nota:** Necesitas crear una "contraseña de aplicación" en tu cuenta de Google (requiere 2FA habilitado).
+
+### Tipos de Emails Enviados
+
+1. **Confirmación de reserva** → Cliente
+2. **Notificación de nueva reserva** → Barbero
+3. **Cancelación de reserva** → Cliente y Barbero
+4. **Reprogramación de reserva** → Cliente y Barbero
+5. **Recordatorio 24h antes** → Cliente (automático)
+
+## 🚀 Próximos Pasos (Sprint 3)
+
 - **Sprint 3**:
-  - Reportes avanzados con gráficos
-  - Gestión de feriados y bloqueos
-  - Mejoras de UI/UX
-  - Tests automatizados
+  - Panel administrativo con reportes y gráficos
+  - Gestión de feriados y bloqueos de agenda
+  - Sistema de calificaciones y reseñas
+  - Mejoras de UI/UX con framework moderno
+  - Suite completa de tests automatizados
 
 ## 📄 Licencia
 

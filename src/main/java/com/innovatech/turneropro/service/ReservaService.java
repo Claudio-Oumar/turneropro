@@ -65,8 +65,11 @@ public class ReservaService {
         
         Reserva reservaGuardada = reservaRepository.save(reserva);
         
-        // Enviar notificación por correo
+        // Enviar notificación por correo al cliente
         emailService.enviarConfirmacionReserva(reservaGuardada);
+        
+        // Enviar notificación al barbero de nueva reserva
+        emailService.enviarNotificacionNuevaReserva(reservaGuardada);
         
         return reservaGuardada;
     }
@@ -108,6 +111,53 @@ public class ReservaService {
         emailService.enviarCancelacionReserva(reservaCancelada);
         
         return reservaCancelada;
+    }
+    
+    public Reserva reprogramarReserva(Long reservaId, String nuevaFechaHoraStr) {
+        Reserva reserva = reservaRepository.findById(reservaId)
+                .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+        
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!reserva.getCliente().getUsername().equals(username)) {
+            throw new RuntimeException("No tienes permiso para reprogramar esta reserva");
+        }
+        
+        if (reserva.getEstado() == Reserva.EstadoReserva.CANCELADA) {
+            throw new RuntimeException("No se puede reprogramar una reserva cancelada");
+        }
+        
+        if (reserva.getEstado() == Reserva.EstadoReserva.COMPLETADA) {
+            throw new RuntimeException("No se puede reprogramar una reserva completada");
+        }
+        
+        // Parsear nueva fecha
+        LocalDateTime nuevaFechaHora = LocalDateTime.parse(nuevaFechaHoraStr);
+        LocalDateTime nuevaFechaHoraFin = nuevaFechaHora.plusMinutes(reserva.getServicio().getDuracionMinutos());
+        
+        // Validar que no haya solapamiento
+        List<Reserva> reservasSolapadas = reservaRepository.findReservasSolapadas(
+                reserva.getBarbero(), nuevaFechaHora, nuevaFechaHoraFin);
+        
+        // Filtrar la reserva actual de las solapadas
+        reservasSolapadas = reservasSolapadas.stream()
+                .filter(r -> !r.getId().equals(reservaId))
+                .toList();
+        
+        if (!reservasSolapadas.isEmpty()) {
+            throw new RuntimeException("El nuevo horario seleccionado no está disponible");
+        }
+        
+        // Actualizar fechas
+        reserva.setFechaHoraInicio(nuevaFechaHora);
+        reserva.setFechaHoraFin(nuevaFechaHoraFin);
+        reserva.setRecordatorioEnviado(false); // Resetear recordatorio
+        
+        Reserva reservaReprogramada = reservaRepository.save(reserva);
+        
+        // Enviar notificaciones
+        emailService.enviarNotificacionReprogramacion(reservaReprogramada);
+        
+        return reservaReprogramada;
     }
     
     public Reserva completarReserva(Long reservaId) {

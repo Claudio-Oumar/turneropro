@@ -217,8 +217,23 @@ async function cargarMisReservas() {
         let html = '<table><thead><tr><th>Barbero</th><th>Servicio</th><th>Fecha/Hora</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
         reservas.forEach(function(r) {
             const fecha = new Date(r.fechaHoraInicio).toLocaleString('es-ES');
-            const puedeCancel = r.estado !== 'CANCELADA' && r.estado !== 'COMPLETADA';
-            html += '<tr><td>' + r.barbero.nombreCompleto + '</td><td>' + r.servicio.nombre + '</td><td>' + fecha + '</td><td>' + r.estado + '</td><td>' + (puedeCancel ? '<button class="btn-small btn-danger" onclick="cancelarReserva(' + r.id + ')">Cancelar</button>' : '-') + '</td></tr>';
+            const estadoClass = getEstadoClass(r.estado);
+            const estadoBadge = '<span class="badge badge-' + estadoClass + '">' + r.estado + '</span>';
+            
+            // Determinar acciones disponibles
+            const puedeModificar = r.estado === 'CONFIRMADA' || r.estado === 'PENDIENTE';
+            let acciones = '-';
+            
+            if (puedeModificar) {
+                acciones = '<div class="action-buttons">' +
+                    '<button class="btn-small btn-warning" onclick="abrirModalReprogramar(' + r.id + ', \'' + r.barbero.nombreCompleto + '\', \'' + r.servicio.nombre + '\', \'' + fecha + '\', ' + r.barbero.id + ', ' + r.servicio.id + ')" title="Cambiar fecha/hora">📅 Reprogramar</button>' +
+                    '<button class="btn-small btn-danger" onclick="abrirModalCancelar(' + r.id + ')" title="Cancelar reserva">❌ Cancelar</button>' +
+                    '</div>';
+            } else if (r.estado === 'CANCELADA' && r.motivoCancelacion) {
+                acciones = '<small style="color: #666;">Motivo: ' + r.motivoCancelacion + '</small>';
+            }
+            
+            html += '<tr><td>' + r.barbero.nombreCompleto + '</td><td>' + r.servicio.nombre + '</td><td>' + fecha + '</td><td>' + estadoBadge + '</td><td>' + acciones + '</td></tr>';
         });
         html += '</tbody></table>';
         listaDiv.innerHTML = html;
@@ -228,23 +243,181 @@ async function cargarMisReservas() {
     }
 }
 
-async function cancelarReserva(reservaId) {
-    if (!confirm('Cancelar esta reserva?')) return;
-    const motivo = prompt('Motivo (opcional):') || 'Sin motivo';
+function getEstadoClass(estado) {
+    const estados = {
+        'CONFIRMADA': 'success',
+        'PENDIENTE': 'warning',
+        'CANCELADA': 'danger',
+        'COMPLETADA': 'info',
+        'NO_ASISTIO': 'secondary'
+    };
+    return estados[estado] || 'secondary';
+}
+
+// Variables globales para modales
+let reservaIdActual = null;
+let reservaInfoActual = {};
+
+// MODAL CANCELAR
+function abrirModalCancelar(reservaId) {
+    reservaIdActual = reservaId;
+    document.getElementById('motivoCancelacion').value = '';
+    document.getElementById('modalCancelar').style.display = 'flex';
+}
+
+function cerrarModalCancelar() {
+    document.getElementById('modalCancelar').style.display = 'none';
+    reservaIdActual = null;
+}
+
+async function confirmarCancelacion() {
+    if (!reservaIdActual) return;
+    
+    const motivo = document.getElementById('motivoCancelacion').value.trim() || 'Sin motivo especificado';
+    
     try {
-        const response = await fetch(API_URL + '/reservas/' + reservaId + '/cancelar', {
+        console.log('🗑️ Cancelando reserva #' + reservaIdActual);
+        const response = await fetch(API_URL + '/reservas/' + reservaIdActual + '/cancelar', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': 'Bearer ' + token 
+            },
             body: JSON.stringify({ motivo: motivo })
         });
-        if (response.ok) {
-            alert('Reserva cancelada');
-            cargarMisReservas();
-        } else {
-            alert('Error al cancelar');
+        
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ mensaje: 'Error desconocido' }));
+            alert('❌ Error al cancelar: ' + (error.mensaje || 'Error desconocido'));
+            return;
         }
+        
+        console.log('✅ Reserva cancelada exitosamente');
+        alert('✅ Reserva cancelada exitosamente. Se ha notificado al barbero.');
+        cerrarModalCancelar();
+        cargarMisReservas();
     } catch (error) {
-        alert('Error de conexion');
+        console.error('❌ Error al cancelar reserva:', error);
+        alert('❌ Error de conexión con el servidor');
+    }
+}
+
+// MODAL REPROGRAMAR
+function abrirModalReprogramar(reservaId, barbero, servicio, fechaActual, barberoId, servicioId) {
+    reservaIdActual = reservaId;
+    reservaInfoActual = { barberoId, servicioId };
+    
+    document.getElementById('infoReservaActual').innerHTML = 
+        '<strong>Reserva actual:</strong><br>' +
+        'Barbero: ' + barbero + '<br>' +
+        'Servicio: ' + servicio + '<br>' +
+        'Fecha/Hora actual: ' + fechaActual;
+    
+    document.getElementById('nuevaFecha').value = '';
+    document.getElementById('nuevaHora').innerHTML = '<option value="">Primero seleccione una fecha</option>';
+    document.getElementById('nuevaHora').disabled = true;
+    
+    // Event listener para cargar horarios cuando cambie la fecha
+    document.getElementById('nuevaFecha').onchange = cargarHorariosReprogramacion;
+    
+    document.getElementById('modalReprogramar').style.display = 'flex';
+}
+
+function cerrarModalReprogramar() {
+    document.getElementById('modalReprogramar').style.display = 'none';
+    reservaIdActual = null;
+    reservaInfoActual = {};
+}
+
+async function cargarHorariosReprogramacion() {
+    const fecha = document.getElementById('nuevaFecha').value;
+    const selectHora = document.getElementById('nuevaHora');
+    
+    if (!fecha) {
+        selectHora.disabled = true;
+        selectHora.innerHTML = '<option value="">Primero seleccione una fecha</option>';
+        return;
+    }
+    
+    try {
+        console.log('🕐 Cargando horarios para reprogramación...');
+        const url = `${API_URL}/barberos/${reservaInfoActual.barberoId}/horarios-disponibles?fecha=${fecha}&servicioId=${reservaInfoActual.servicioId}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ mensaje: 'Error al cargar horarios' }));
+            selectHora.disabled = true;
+            selectHora.innerHTML = `<option value="">❌ ${error.mensaje || 'No disponible ese día'}</option>`;
+            return;
+        }
+        
+        const data = await response.json();
+        const horarios = data.horarios || [];
+        
+        if (horarios.length === 0) {
+            selectHora.disabled = true;
+            selectHora.innerHTML = '<option value="">❌ No hay horarios disponibles</option>';
+            return;
+        }
+        
+        selectHora.disabled = false;
+        selectHora.innerHTML = '<option value="">Seleccione una hora...</option>';
+        
+        horarios.forEach(function(hora) {
+            const option = document.createElement('option');
+            option.value = hora;
+            const [hours, minutes] = hora.split(':');
+            let hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            hour = hour % 12 || 12;
+            option.textContent = `${hour}:${minutes} ${ampm}`;
+            selectHora.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error('❌ Error al cargar horarios:', error);
+        selectHora.disabled = true;
+        selectHora.innerHTML = '<option value="">❌ Error al cargar horarios</option>';
+    }
+}
+
+async function confirmarReprogramacion() {
+    if (!reservaIdActual) return;
+    
+    const nuevaFecha = document.getElementById('nuevaFecha').value;
+    const nuevaHora = document.getElementById('nuevaHora').value;
+    
+    if (!nuevaFecha || !nuevaHora) {
+        alert('❌ Por favor selecciona la nueva fecha y hora');
+        return;
+    }
+    
+    const nuevaFechaHora = nuevaFecha + 'T' + nuevaHora;
+    
+    try {
+        console.log('📅 Reprogramando reserva #' + reservaIdActual + ' para ' + nuevaFechaHora);
+        const response = await fetch(API_URL + '/reservas/' + reservaIdActual + '/reprogramar', {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': 'Bearer ' + token 
+            },
+            body: JSON.stringify({ nuevaFechaHora: nuevaFechaHora })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ mensaje: 'Error desconocido' }));
+            alert('❌ Error al reprogramar: ' + (error.mensaje || 'Error desconocido'));
+            return;
+        }
+        
+        console.log('✅ Reserva reprogramada exitosamente');
+        alert('✅ Reserva reprogramada exitosamente. Se ha notificado al barbero.');
+        cerrarModalReprogramar();
+        cargarMisReservas();
+    } catch (error) {
+        console.error('❌ Error al reprogramar reserva:', error);
+        alert('❌ Error de conexión con el servidor');
     }
 }
 

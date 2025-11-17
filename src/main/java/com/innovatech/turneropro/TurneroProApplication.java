@@ -12,7 +12,8 @@ public class TurneroProApplication {
         System.out.println("==============================================");
         System.out.println("TurneroPro - Barber Shop Edition");
         System.out.println("Aplicación iniciada correctamente");
-        System.out.println("Accede a: http://localhost:8080");
+        System.out.println("Accede a: http://localhost:8081");
+        System.out.println("MailHog (correos): http://localhost:8025");
         System.out.println("==============================================");
     }
 }

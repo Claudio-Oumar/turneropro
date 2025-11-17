@@ -51,6 +51,20 @@ public class ReservaController {
         }
     }
     
+    @PutMapping("/{reservaId}/reprogramar")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<?> reprogramarReserva(
+            @PathVariable Long reservaId,
+            @RequestBody Map<String, String> body) {
+        try {
+            String nuevaFechaStr = body.get("nuevaFechaHora");
+            Reserva reserva = reservaService.reprogramarReserva(reservaId, nuevaFechaStr);
+            return ResponseEntity.ok(reserva);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
+    
     @PutMapping("/{reservaId}/completar")
     @PreAuthorize("hasRole('BARBERO')")
     public ResponseEntity<?> completarReserva(@PathVariable Long reservaId) {

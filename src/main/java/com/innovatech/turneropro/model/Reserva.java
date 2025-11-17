@@ -51,6 +51,9 @@ public class Reserva {
     @Column(columnDefinition = "TEXT")
     private String motivoCancelacion;
     
+    @Column(nullable = false)
+    private Boolean recordatorioEnviado = false;
+    
     // Enum para estado de reserva
     public enum EstadoReserva {
         PENDIENTE,
