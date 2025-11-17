@@ -29,9 +29,8 @@ COPY --from=build /app/target/*.jar app.jar
 # Exponer puerto
 EXPOSE 8081
 
-# Variables de entorno (serán sobrescritas por docker-compose)
+# Variables de entorno
 ENV SPRING_PROFILES_ACTIVE=prod
-ENV JAVA_OPTS="-Xmx512m -Xms256m"
 
 # Ejecutar la aplicación
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["java", "-Xmx512m", "-Xms256m", "-Dserver.port=${PORT:-8081}", "-jar", "app.jar"]

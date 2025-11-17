@@ -1,1 +1,1 @@
-web: java -Dserver.port=$PORT $JAVA_OPTS -jar target/turnero-pro.jar
+web: java -Dserver.port=$PORT -jar target/turnero-pro.jar
